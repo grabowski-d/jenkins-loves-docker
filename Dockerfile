@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY app/server.py ./
 
-ENV SERVER_PORT=8000
-EXPOSE 8000
+ARG SERVER_PORT=8000
+EXPOSE ${SERVER_PORT}
 
 CMD [ "python", "./server.py" ]
