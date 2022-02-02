@@ -9,7 +9,7 @@ pipeline {
         stage('Build docker image') {
             steps {
                 script {
-                    appImage = docker.build("sample-app:${env.BUILD_ID}", '--build-arg SERVER_PORT=9000 .')
+                    appImage = docker.build('sample-app:latest', '--build-arg SERVER_PORT=9000 .')
                 }
             }
         }
@@ -25,7 +25,10 @@ pipeline {
     }
     post {
         cleanup {
-            script { cleanWs() }
+            script {
+                cleanWs()
+                sh "docker image rm ${appImage.id}"
+            }
         }
     }
 }
