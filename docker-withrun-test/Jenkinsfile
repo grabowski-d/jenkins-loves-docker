@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'lesson4', url: 'https://github.com/grabowski-d/jenkins-loves-docker.git'
+            }
+        }
+        stage('Run tests') {
+            steps {
+                dir('docker-withrun-test') {
+                    script {
+                        networkName = 'test-network'
+                        sh "docker network create ${networkName}"
+                        docker.image('httpd:2.4').withRun("--network ${networkName} --hostname myServ") {
+                            testRunner = docker.build('test-runner')
+                            testRunner.inside("--network ${networkName}") {
+                                sh 'pytest --junit-xml=test_result.xml test.py'
+                            }
+                        }
+                        sh "docker network rm ${networkName}"
+                    }
+                }
+            }
+            post {
+                always {
+                    junit '**/**test_result.xml'
+                }
+            }
+        }
+    }
+}
