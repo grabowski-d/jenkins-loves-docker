@@ -1,0 +1,17 @@
+pipeline {
+    agent {
+        dockerfile {
+            filename 'Dockerfile'
+            dir '.'
+            additionalBuildArgs '--pull'
+            args '--hostname myContanier'
+        }
+    }
+    stages {
+        stage('Test') {
+            steps {
+                sh 'hostname'
+            }
+        }
+    }
+}

@@ -1,0 +1,19 @@
+pipeline {
+    agent any
+    stages {
+        stage('Test with trivy') {
+            steps {
+                script {
+                    trivyImage = docker.image('aquasec/trivy:latest')
+                    trivyImage.inside('--entrypoint= -u root') {
+                        sh '''trivy image \
+                                --format=json \
+                                -o results.json \
+                                python:3.4-alpine'''
+                    }
+                    recordIssues(tools: [trivy(pattern: 'results.json')])
+                }
+            }
+        }
+    }
+}
