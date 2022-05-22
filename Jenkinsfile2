@@ -1,0 +1,43 @@
+def withDockerCompose(String filePath, String runArgs, Closure inner) {
+    projectName = UUID.randomUUID().toString().substring(0,8)
+    try {
+        sh "docker-compose --file ${filePath} -p ${projectName} up -d ${runArgs}"
+        inner.call(projectName)
+    } finally {
+        sh "docker-compose --file ${filePath} -p ${projectName} down --rmi local --volumes"
+    }
+}
+
+
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/grabowski-d/jenkins-loves-docker.git', branch: 'lesson5'
+            }
+        }
+        stage('Run tests') {
+            steps {
+                script {
+                    env.DATABASE_PASSWORD = readFile 'app/db/password.txt'
+                    withDockerCompose('app/docker-compose.yaml', '--build') { projectName ->
+                        docker.build('test-runner', 'tests').inside('--network=host') {
+                            sh 'pytest --junit-xml=pytest.xml .'
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    junit testResults: '**/*pytest.xml'
+                }
+            }
+        }
+    }
+    post {
+        cleanup {
+            cleanWs()
+        }
+    }
+}
